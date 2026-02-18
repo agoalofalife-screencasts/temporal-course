@@ -1,6 +1,6 @@
 # Food Delivery
 
-<img src="cover.png" alt="Temporal Course Cover" align="left"  width="300" style="margin-right: 25px; margin-bottom: 16px;" />
+<img src="cover.png" alt="Temporal Course Cover" align="left"  width="300" style="margin-right: 30px; margin-bottom: 20px;" />
 
 Приложение для доставки еды, построенное на **Laravel 12**, **RoadRunner**, **Temporal** и **PostgreSQL**.
 
