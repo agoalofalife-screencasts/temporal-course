@@ -34,7 +34,7 @@
 ### 1. Клонировать репозиторий
 
 ```bash
-git clone <url-репозитория> food-delivery
+git clone git@github.com:agoalofalife-screencasts/temporal-course.git
 cd food-delivery
 ```
 
