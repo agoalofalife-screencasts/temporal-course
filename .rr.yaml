@@ -1,0 +1,48 @@
+version: "3"
+
+server:
+  command: "php ./vendor/bin/roadrunner-worker"
+  relay: pipes
+  env:
+    - APP_BASE_PATH: "/app"
+    - LARAVEL_OCTANE: 1
+
+http:
+  address: "0.0.0.0:8000"
+  middleware:
+    - gzip
+    - static
+  static:
+    dir: public
+    forbid:
+      - .php
+      - .htaccess
+  pool:
+    num_workers: 1
+    max_jobs: 64
+    supervisor:
+      max_worker_memory: 128
+
+# Temporal plugin конфигурация
+temporal:
+  address: "${TEMPORAL_ADDRESS:-localhost:7233}"
+
+  activities:
+    # Pool для Activities
+    num_workers: 2
+    command: "php ./vendor/bin/roadrunner-temporal-worker"
+
+logs:
+  # RoadRunner перенаправляет stderr PHP-воркеров в свой лог-пайплайн.
+  # Laravel пишет в php://stderr (LOG_CHANNEL=stderr), RR подхватывает.
+  level: debug
+  encoding: json
+  mode: production
+  output: ["stdout"]
+  channels:
+    server:
+      mode: raw
+      level: debug
+      encoding: console
+      output: ["stdout"]
+      err_output: ["stdout"]

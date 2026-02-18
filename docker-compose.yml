@@ -1,0 +1,101 @@
+version: "3.8"
+
+services:
+  # ===================
+  # Temporal Infrastructure
+  # ===================
+
+  postgresql:
+    image: postgres:15-alpine
+    container_name: food_delivery_postgres
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  temporal:
+    image: temporalio/auto-setup:1.29.3
+    container_name: food_delivery_temporal
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    environment:
+      - DB=postgres12
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+    ports:
+      - "7233:7233"   # gRPC frontend
+    healthcheck:
+      test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  temporal-ui:
+    image: temporalio/ui:2.43.3
+    container_name: food_delivery_temporal_ui
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+
+  # ===================
+  # Application
+  # ===================
+
+  app-postgresql:
+    image: postgres:15-alpine
+    container_name: food_delivery_app_postgresql
+    environment:
+      POSTGRES_DB: laravel
+      POSTGRES_PASSWORD: test
+      POSTGRES_USER: test
+    ports:
+      - "5433:5432"
+    volumes:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: food_delivery_app
+    depends_on:
+      temporal:
+        condition: service_healthy
+      app-postgresql:
+        condition: service_healthy
+    volumes:
+      - ./:/app
+    ports:
+      - "8000:8000"   # HTTP
+      - "6001:6001"   # RoadRunner metrics (optional)
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - APP_ENV=local
+      - APP_DEBUG=true
+    command: ["/usr/local/bin/rr", "serve", "-c", ".rr.yaml"]
+
+volumes:
+  postgres_data:

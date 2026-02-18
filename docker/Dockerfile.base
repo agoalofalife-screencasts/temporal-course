@@ -1,0 +1,13 @@
+FROM php:8.4-cli
+
+ENV CFLAGS="$CFLAGS -D_GNU_SOURCE"
+ENV PROTOBUF_VERSION="3.25.1"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash git unzip libzip-dev libonig-dev libpq-dev \
+ && docker-php-ext-configure pgsql -with-pgsql=/usr/local/pgsql \
+ && docker-php-ext-install zip sockets pcntl pdo pdo_pgsql pgsql mbstring \
+ && pecl channel-update pecl.php.net \
+ && pecl install protobuf-${PROTOBUF_VERSION} grpc \
+ && docker-php-ext-enable protobuf grpc \
+ && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
