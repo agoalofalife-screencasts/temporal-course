@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\HelloWorldController;
+use App\Http\Controllers\OrderController;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
 
-Route::get('/hello', HelloWorldController::class);
+Route::post('/orders', OrderController::class);
