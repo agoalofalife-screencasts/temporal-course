@@ -4,11 +4,14 @@ namespace App\Temporal\Workflows;
 
 use App\Modules\Order\Dto\OrderDto;
 use App\Temporal\Activities\NotifyRestaurantActivity;
+use App\Temporal\Activities\PrepareOrderActivity;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterval;
 use Temporal\Activity\ActivityCancellationType;
 use Temporal\Activity\ActivityOptions;
 use Temporal\Common\RetryOptions;
+use Temporal\Exception\Failure\ActivityFailure;
+use Temporal\Exception\Failure\TimeoutFailure;
 use Temporal\Workflow;
 use Temporal\Workflow\WorkflowInterface;
 use Temporal\Workflow\WorkflowMethod;
@@ -20,6 +23,9 @@ class OrderWorkflow
 {
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
+
+    /** @var PrepareOrderActivity */
+    private $prepareOrderActivity;
 
     public function __construct()
     {
@@ -53,8 +59,23 @@ class OrderWorkflow
                 )
 //                ->withTaskQueue()
                 ->withSummary('Notify restaurant about new order')
-                ->withScheduleToCloseTimeout(CarbonInterval::seconds(30))
+                ->withStartToCloseTimeout(CarbonInterval::seconds(10))
+                ->withScheduleToStartTimeout(CarbonInterval::seconds(5))
 //                ->withScheduleToCloseTimeout(CarbonInterval::seconds(2)) for online demonstration
+        );
+
+        $this->prepareOrderActivity = Workflow::newActivityStub(
+            PrepareOrderActivity::class,
+            ActivityOptions::new()
+                ->withRetryOptions(RetryOptions::new()
+                    ->withMaximumAttempts(3)
+                )
+                // Total time budget for the entire activity execution (including all stages).
+                ->withStartToCloseTimeout(CarbonInterval::seconds(120))
+                // Maximum silence between heartbeats. If Temporal doesn't receive a heartbeat
+                // within this window it considers the activity stalled and schedules a retry.
+                ->withHeartbeatTimeout(CarbonInterval::seconds(3))
+                ->withSummary('Prepare order in the kitchen')
         );
     }
 
@@ -95,8 +116,24 @@ class OrderWorkflow
             'customer' => $orderDto->customerName(),
         ]);
 
-        yield $this->notifyRestaurantActivity->notify($orderDto);
+        try {
+            yield $this->notifyRestaurantActivity->notify($orderDto);
+        } catch (ActivityFailure $e) {
+            $previous = $e->getPrevious();
+
+            if ($previous instanceof TimeoutFailure) {
+                Workflow::timer(CarbonInterval::seconds(4), Workflow\TimerOptions::new()->withSummary('Notify user order was cancelled'));
+                return;
+            }
+        }
+
 
         Workflow::getLogger()->info('Restaurant was notified about new order');
+
+        $preparationResult = yield $this->prepareOrderActivity->prepare($orderDto);
+
+        Workflow::getLogger()->info('Order preparation completed', [
+            'status' => $preparationResult,
+        ]);
     }
 }
