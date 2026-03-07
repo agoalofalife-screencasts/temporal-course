@@ -1,0 +1,23 @@
+app/Temporal/Workflows/OrderWorkflow.php
+  0762ba5d35574947 111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.8",
+  "base_commit_sha": "3c5d9cf3232feb399675b33e41aadb62afc5d0b5",
+  "prompts": {
+    "0762ba5d35574947": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8612fd61-7f55-4f37-ad6f-9598bb6328c5",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 1,
+      "overriden_lines": 0
+    }
+  }
+}
