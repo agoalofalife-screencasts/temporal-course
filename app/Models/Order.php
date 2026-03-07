@@ -9,7 +9,7 @@ use Keepsuit\LaravelTemporal\Integrations\Eloquent\TemporalEloquentSerialize;
 use Ramsey\Uuid\UuidInterface;
 
 /**
- * @property UuidInterface $uuid
+ * @property UuidInterface $id
  * @property string $workflow_id
  * @property string $customer_name
  * @property string $customer_phone

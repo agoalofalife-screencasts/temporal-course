@@ -3,16 +3,13 @@
 namespace App\Temporal\Workflows;
 
 use App\Modules\Order\Dto\OrderDto;
+use App\Modules\Order\Enums\OrderStatus;
 use App\Temporal\Activities\NotifyRestaurantActivity;
-use App\Temporal\Activities\PrepareOrderActivity;
-use Carbon\CarbonImmutable;
 use Carbon\CarbonInterval;
-use Temporal\Activity\ActivityCancellationType;
 use Temporal\Activity\ActivityOptions;
 use Temporal\Common\RetryOptions;
-use Temporal\Exception\Failure\ActivityFailure;
-use Temporal\Exception\Failure\TimeoutFailure;
 use Temporal\Workflow;
+use Temporal\Workflow\SignalMethod;
 use Temporal\Workflow\WorkflowInterface;
 use Temporal\Workflow\WorkflowMethod;
 
@@ -24,8 +21,7 @@ class OrderWorkflow
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
 
-    /** @var PrepareOrderActivity */
-    private $prepareOrderActivity;
+    private OrderStatus $status;
 
     public function __construct()
     {
@@ -63,20 +59,6 @@ class OrderWorkflow
                 ->withScheduleToStartTimeout(CarbonInterval::seconds(5))
 //                ->withScheduleToCloseTimeout(CarbonInterval::seconds(2)) for online demonstration
         );
-
-        $this->prepareOrderActivity = Workflow::newActivityStub(
-            PrepareOrderActivity::class,
-            ActivityOptions::new()
-                ->withRetryOptions(RetryOptions::new()
-                    ->withMaximumAttempts(3)
-                )
-                // Total time budget for the entire activity execution (including all stages).
-                ->withStartToCloseTimeout(CarbonInterval::seconds(120))
-                // Maximum silence between heartbeats. If Temporal doesn't receive a heartbeat
-                // within this window it considers the activity stalled and schedules a retry.
-                ->withHeartbeatTimeout(CarbonInterval::seconds(3))
-                ->withSummary('Prepare order in the kitchen')
-        );
     }
 
     // Entry point of the Workflow.
@@ -89,6 +71,8 @@ class OrderWorkflow
     #[WorkflowMethod(name: 'Order')]
     public function handle(OrderDto $orderDto): \Generator
     {
+        $this->status = $orderDto->status;
+
         /**
          * Generate a UUID for the order.
          *
@@ -116,24 +100,47 @@ class OrderWorkflow
             'customer' => $orderDto->customerName(),
         ]);
 
-        try {
-            yield $this->notifyRestaurantActivity->notify($orderDto);
-        } catch (ActivityFailure $e) {
-            $previous = $e->getPrevious();
+        yield $this->notifyRestaurantActivity->notify($orderDto);
 
-            if ($previous instanceof TimeoutFailure) {
-                Workflow::timer(CarbonInterval::seconds(4), Workflow\TimerOptions::new()->withSummary('Notify user order was cancelled'));
-                return;
-            }
-        }
-
+        // for simplicity, encapsulate it inside object
+        $this->status = OrderStatus::RestaurantProcessing;
 
         Workflow::getLogger()->info('Restaurant was notified about new order');
 
-        $preparationResult = yield $this->prepareOrderActivity->prepare($orderDto);
+          // imitate some activity to get signal before await statement (Demonstrated in video)
+//        yield Workflow::timer(
+//            CarbonInterval::seconds(20),
+//            Workflow\TimerOptions::new()->withSummary('Wait pause in order to show signal before waiting')
+//        );
 
-        Workflow::getLogger()->info('Order preparation completed', [
-            'status' => $preparationResult,
-        ]);
+        yield Workflow::await(
+          fn (): bool => !$this->status->restaurantProcessing(),
+        );
+
+
+        if ($this->status->restaurantRejected()) {
+            Workflow::getLogger()->info('Restaurant rejected the order');
+            // notify customer about the rejection
+            return;
+        }
+
+        // notify customer about the acceptance
+        Workflow::getLogger()->info('Restaurant accepted the order');
+    }
+
+    #[SignalMethod]
+    public function restaurantConfirmation(bool $isConfirmed): void
+    {
+        // what happen if exception was thrown here? Demonstrated in video
+//        throw new \RuntimeException('Not implemented yet');
+
+        if ($this->status !== OrderStatus::RestaurantProcessing) { // idempotent
+            return;
+        }
+        if ($isConfirmed) {
+            $this->status = OrderStatus::RestaurantAccepted;
+        } else {
+            $this->status = OrderStatus::RestaurantRejected;
+        }
     }
 }

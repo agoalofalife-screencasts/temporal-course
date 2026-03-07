@@ -17,15 +17,15 @@ class NotifyRestaurantActivity
     {
         $attempt = Activity::getInfo()->attempt;
 
-        if ($attempt === 1) { // пример, тут конечно ответ от api ресторана
-            // переопределяем retry options
-            throw new \Temporal\Exception\Failure\ApplicationFailure(
-                message: "Stocktaking is $attempt",
-                type: 'my_failure_type',
-                nonRetryable: false,
-                nextRetryDelay: CarbonInterval::seconds(30),
-            );
-        }
+//        if ($attempt === 1) { // пример, тут конечно ответ от api ресторана
+//            // переопределяем retry options
+//            throw new \Temporal\Exception\Failure\ApplicationFailure(
+//                message: "Stocktaking is $attempt",
+//                type: 'my_failure_type',
+//                nonRetryable: false,
+//                nextRetryDelay: CarbonInterval::seconds(30),
+//            );
+//        }
 
         sleep(1);
 

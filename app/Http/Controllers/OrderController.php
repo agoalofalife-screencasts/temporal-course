@@ -28,7 +28,9 @@ class OrderController extends Controller
             'address' => 'required|string',
         ]);
 
-        $workflowId = 'order-'. Uuid::uuid7();
+        $orderId = Uuid::uuid7();
+        $workflowId = "order-{$orderId->toString()}"
+        ;
 //        $workflowId = 'order-1';
 
         $workflow = $client->newWorkflowStub(
@@ -88,7 +90,7 @@ class OrderController extends Controller
         $order = Order::firstOrCreate([
             'workflow_id' => $workflowId,
         ], [
-            'id' => Uuid::uuid7(),
+            'id' => $orderId,
             'customer_name' => $validated['customer_name'],
             'customer_phone' => $validated['phone'],
             'delivery_address' => $validated['address'],
