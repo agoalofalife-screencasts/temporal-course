@@ -18,6 +18,8 @@ use Temporal\Workflow\WorkflowMethod;
 #[WorkflowInterface]
 class OrderWorkflow
 {
+    private const RESTAURANT_TIMEOUT_SECONDS = 20;
+
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
 
@@ -107,22 +109,28 @@ class OrderWorkflow
 
         Workflow::getLogger()->info('Restaurant was notified about new order');
 
-          // imitate some activity to get signal before await statement (Demonstrated in video)
-//        yield Workflow::timer(
-//            CarbonInterval::seconds(20),
-//            Workflow\TimerOptions::new()->withSummary('Wait pause in order to show signal before waiting')
-//        );
-
-        yield Workflow::await(
+        $restaurantIsResponded = yield Workflow::awaitWithTimeout(
+            CarbonInterval::seconds(self::RESTAURANT_TIMEOUT_SECONDS),
           fn (): bool => !$this->status->restaurantProcessing(),
         );
 
+        if (!$restaurantIsResponded) {
+            Workflow::getLogger()->info('Restaurant did not respond to the order');
+            // might be the reason - for example rejected because timeout or some other reason
+            $this->status = OrderStatus::RestaurantRejected;
+            // refund activity
+            // notification activity
+            return;
+        }
 
         if ($this->status->restaurantRejected()) {
+            $this->status = OrderStatus::RestaurantRejected;
             Workflow::getLogger()->info('Restaurant rejected the order');
             // notify customer about the rejection
             return;
         }
+
+        $this->status = OrderStatus::RestaurantAccepted;
 
         // notify customer about the acceptance
         Workflow::getLogger()->info('Restaurant accepted the order');
