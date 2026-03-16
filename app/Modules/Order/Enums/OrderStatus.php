@@ -13,6 +13,18 @@ enum OrderStatus: string
     case Completed = 'Completed';
     case Canceled = 'Canceled';
 
+    public function getHumanReadableStatus(): string
+    {
+        return match ($this) {
+            self::Created => 'Order created',
+            self::RestaurantProcessing => 'Waiting confirmation from restaurant',
+            self::RestaurantAccepted => 'Restaurant confirmed the order',
+            self::RestaurantRejected => 'Restaurant could not confirmed the order',
+            self::Completed => 'Order successfully completed',
+            self::Canceled => 'Order was cancelled',
+            default => 'Status is unknown',
+        };
+    }
 
     public function restaurantRejected(): bool
     {

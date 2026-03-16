@@ -151,4 +151,9 @@ class OrderWorkflow
             $this->status = OrderStatus::RestaurantRejected;
         }
     }
+    #[Workflow\QueryMethod]
+    public function getStatus(): OrderStatus
+    {
+        return $this->status;
+    }
 }
