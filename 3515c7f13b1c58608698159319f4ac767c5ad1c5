@@ -1,0 +1,25 @@
+app/Temporal/Workflows/SearchCourier/FindCourierWorkflowInterface.php
+  9e741bcdfe351d4d 13,16
+app/Temporal/Workflows/OrderWorkflow.php
+  9e741bcdfe351d4d 175
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.15",
+  "base_commit_sha": "3515c7f13b1c58608698159319f4ac767c5ad1c5",
+  "prompts": {
+    "9e741bcdfe351d4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "45fb46fc-e64e-4da1-b821-599ed6efb33e",
+        "model": "claude-opus-4-6"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>",
+      "messages": [],
+      "total_additions": 3,
+      "total_deletions": 1,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
