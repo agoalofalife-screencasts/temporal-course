@@ -9,6 +9,11 @@ enum OrderStatus: string
     case RestaurantAccepted = 'RestaurantAccepted';
 
     case RestaurantRejected = 'RestaurantRejected';
+    case CourierSearching = 'CourierSearching';
+
+    case CourierAssigned = 'CourierAssigned';
+    case CourierWasNotFound = 'CourierWasNotFound';
+
     case Processing = 'Processing';
     case Completed = 'Completed';
     case Canceled = 'Canceled';
@@ -20,6 +25,8 @@ enum OrderStatus: string
             self::RestaurantProcessing => 'Waiting confirmation from restaurant',
             self::RestaurantAccepted => 'Restaurant confirmed the order',
             self::RestaurantRejected => 'Restaurant could not confirmed the order',
+            self::CourierSearching => 'Searching for courier',
+            self::CourierAssigned => 'Courier assigned',
             self::Completed => 'Order successfully completed',
             self::Canceled => 'Order was cancelled',
             default => 'Status is unknown',

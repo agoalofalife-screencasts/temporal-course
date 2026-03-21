@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Log;
 use Temporal\Activity;
 use Temporal\Activity\ActivityInterface;
 use Temporal\Activity\ActivityMethod;
+use Temporal\Support\VirtualPromise;
 
 #[ActivityInterface(prefix: 'NotifyRestaurant')]
 class NotifyRestaurantActivity
 {
+    /** @return VirtualPromise<void> */
     #[ActivityMethod(name: 'Notify')]
     public function notify(OrderDto $orderDto): void
     {

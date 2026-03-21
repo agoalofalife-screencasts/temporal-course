@@ -4,11 +4,17 @@ namespace App\Temporal\Workflows;
 
 use App\Modules\Order\Dto\OrderDto;
 use App\Modules\Order\Enums\OrderStatus;
+use App\Modules\SearchCourier\Dto\DeliveryLocation;
+use App\Modules\SearchCourier\Dto\SearchCourierResult;
+use App\Modules\SearchCourier\Entity\Courier;
 use App\Temporal\Activities\NotifyRestaurantActivity;
+use App\Temporal\Workflows\SearchCourier\FindCourierWorkflow;
 use Carbon\CarbonInterval;
 use Temporal\Activity\ActivityOptions;
+use Temporal\Api\Enums\V1\ParentClosePolicy;
 use Temporal\Common\RetryOptions;
 use Temporal\Workflow;
+use Temporal\Workflow\ChildWorkflowOptions;
 use Temporal\Workflow\SignalMethod;
 use Temporal\Workflow\WorkflowInterface;
 use Temporal\Workflow\WorkflowMethod;
@@ -18,12 +24,14 @@ use Temporal\Workflow\WorkflowMethod;
 #[WorkflowInterface]
 class OrderWorkflow
 {
-    private const RESTAURANT_TIMEOUT_SECONDS = 20;
+    private const RESTAURANT_TIMEOUT_SECONDS = 30;
 
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
 
     private OrderStatus $status;
+
+    private ?Courier $courier = null;
 
     public function __construct()
     {
@@ -134,6 +142,51 @@ class OrderWorkflow
 
         // notify customer about the acceptance
         Workflow::getLogger()->info('Restaurant accepted the order');
+
+        // Create stub for child workflow
+        $findCourierWorkflow = Workflow::newChildWorkflowStub(
+            FindCourierWorkflow::class,
+            ChildWorkflowOptions::new()
+                // Unique id for child workflow
+                // easier to look for in UI and idempotency
+                ->withWorkflowId("find-courier-{$orderDto->orderId()}")
+
+                // Timeout for the entire process of finding a courier including retries
+                ->withWorkflowExecutionTimeout(CarbonInterval::minutes(30))
+
+                // What to do if parent workflow is closed
+                // PARENT_CLOSE_POLICY_TERMINATE - Child is being forcefully terminated
+                // PARENT_CLOSE_POLICY_ABANDON - Child continues to run
+                // PARENT_CLOSE_POLICY_REQUEST_CANCEL -  Child receives a termination signalIf a graceful shutdown is required
+                ->withParentClosePolicy(ParentClosePolicy::PARENT_CLOSE_POLICY_TERMINATE)
+        );
+
+        $this->status = OrderStatus::CourierSearching;
+
+        /**
+         * @var SearchCourierResult $searchCourierResult
+         */
+        $searchCourierResult = yield $findCourierWorkflow->find(
+            pickup: new DeliveryLocation(
+                latitude: 40.7128,
+                longitude: -74.0060,
+                address: '123 Restaurant Street, New York, NY 10001',
+            ),
+            dropOff: new DeliveryLocation(
+                latitude: 40.7589,
+                longitude: -73.9851,
+                address: '456 Customer Avenue, New York, NY 10019',
+            )
+        );
+
+        if (!$searchCourierResult->courierWasFound()) {
+            $this->status = OrderStatus::CourierWasNotFound;
+            // fallback, cancel order
+            // refund, notification
+            return;
+        }
+
+        $this->status = OrderStatus::CourierAssigned;
     }
 
     #[SignalMethod]

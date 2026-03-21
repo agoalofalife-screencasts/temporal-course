@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "595af9919aec12c48ded92d4d95b6c01",
+    "content-hash": "94ff8aca5bf127f0f4b9629f4d71397d",
     "packages": [
         {
             "name": "brick/math",
@@ -8693,6 +8693,68 @@
                 }
             ],
             "time": "2025-12-04T18:17:06+00:00"
+        },
+        {
+            "name": "temporal-php/support",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/temporal-php/support.git",
+                "reference": "b177152a2add479b0b3e83c1431517db8ce8184d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/temporal-php/support/zipball/b177152a2add479b0b3e83c1431517db8ce8184d",
+                "reference": "b177152a2add479b0b3e83c1431517db8ce8184d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.1",
+                "temporal/sdk": "^2.15"
+            },
+            "require-dev": {
+                "buggregator/trap": "^1.4",
+                "dereuromark/composer-prefer-lowest": "^0.1.10",
+                "phpunit/phpunit": "^10.5",
+                "spiral/code-style": "^2.3.0",
+                "ta-tikoma/phpunit-architecture-test": "^0.8.4",
+                "vimeo/psalm": "^6.13"
+            },
+            "suggest": {
+                "buggregator/trap": "For better debugging and protobuf messages dumping"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Temporal\\Support\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Aleksei Gagarin (roxblnfk)",
+                    "homepage": "https://github.com/roxblnfk"
+                }
+            ],
+            "description": "Helpers that simplify working with the Temporal PHP SDK",
+            "keywords": [
+                "helper",
+                "temporal"
+            ],
+            "support": {
+                "issues": "https://github.com/temporal-php/support/issues",
+                "source": "https://github.com/temporal-php/support/tree/1.1.0"
+            },
+            "funding": [
+                {
+                    "url": "https://patreon.com/roxblnfk",
+                    "type": "patreon"
+                }
+            ],
+            "time": "2025-09-13T09:03:41+00:00"
         },
         {
             "name": "temporal/sdk",
