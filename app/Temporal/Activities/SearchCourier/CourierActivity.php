@@ -15,15 +15,33 @@ class CourierActivity
     /**
      * @return array<int, string>
      */
-    public function findAvailableCouriers(float $latitude, float $longitude, int $currentRadius, array $declinedCouriersIds): array
+    public function findAvailableCouriersInCompanyA(DeliveryLocation $pickup, int $currentRadius, array $declinedCouriersIds): array
     {
-        sleep(10);
+        sleep(20);
 
         // list of candidates
         return [
-            fake()->uuid(),
-            fake()->uuid(),
-            fake()->uuid(),
+            'id courier from company A',
+        ];
+    }
+
+    public function findAvailableCouriersInCompanyB(DeliveryLocation $pickup, int $currentRadius, array $declinedCouriersIds): array
+    {
+        sleep(15);
+
+        // list of candidates
+        return [
+//            'id courier from company B',
+        ];
+    }
+
+    public function findAvailableCouriersInCompanyC(DeliveryLocation $pickup, int $currentRadius, array $declinedCouriersIds): array
+    {
+        sleep(1);
+//        throw new \RuntimeException('No couriers available in Company C');
+        // list of candidates
+        return [
+//            'id courier from company C',
         ];
     }
 

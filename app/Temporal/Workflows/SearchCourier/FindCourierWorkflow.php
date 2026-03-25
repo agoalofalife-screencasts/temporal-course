@@ -13,7 +13,9 @@ use App\Temporal\Activities\SearchCourier\CourierActivity;
 use Carbon\CarbonInterval;
 use Temporal\Activity\ActivityOptions;
 use Temporal\Common\RetryOptions;
+use Temporal\Promise;
 use Temporal\Workflow;
+use Temporal\Workflow\CancellationScopeInterface;
 
 // Workflow class for finding a courier for a delivery
 class FindCourierWorkflow implements FindCourierWorkflowInterface
@@ -50,7 +52,7 @@ class FindCourierWorkflow implements FindCourierWorkflowInterface
             ActivityOptions::new()
                 ->withStartToCloseTimeout(CarbonInterval::minutes(2))
                 ->withRetryOptions(
-                    RetryOptions::new()->withmaximumAttempts(3)->withBackoffCoefficient(2.0)
+                    RetryOptions::new()->withmaximumAttempts(1)->withBackoffCoefficient(2.0)
                 )
         );
     }
@@ -68,13 +70,99 @@ class FindCourierWorkflow implements FindCourierWorkflowInterface
 
             $this->status = CourierSearchStatus::Searching;
 
-            /** @var array<string> $availableCourierIds */
-            $availableCourierIds = yield $this->courierActivity->findAvailableCouriers(
-                $pickup->latitude,
-                $pickup->longitude,
-                $this->currentRadius,
-                $this->declinedCourierIds // Except those who already declined
+            // in this case we have to wait one activity and then another, these operations are blocking, we need coroutine
+//            $availableCourierIdsA = yield $this->courierActivity->findAvailableCouriersInCompanyA(
+//                $pickup,
+//                $this->currentRadius,
+//                $this->declinedCourierIds,
+//            );
+//
+//            $availableCourierIdsB = yield $this->courierActivity->findAvailableCouriersInCompanyB(
+//                $pickup,
+//                $this->currentRadius,
+//                $this->declinedCourierIds,
+//            );
+            // then might merge or stop when find someone, we can't search in parallel
+
+
+//            Workflow::async() - don't wait result and blocking - return promise
+//            Promise::all() - finished when all promised was resolved
+//            Promise::any() - wait any success result
+
+            /** @var array<CancellationScopeInterface> $promises */
+            $promises = [
+                Workflow::async(
+                    fn() => yield $this->courierActivity->findAvailableCouriersInCompanyA(
+                        $pickup,
+                        $this->currentRadius,
+                        $this->declinedCourierIds // Except those who already declined
+                    ),
+                ),
+                Workflow::async(
+                    fn() => yield $this->courierActivity->findAvailableCouriersInCompanyB(
+                        $pickup,
+                        $this->currentRadius,
+                        $this->declinedCourierIds // Except those who already declined
+                    )
+                ),
+                Workflow::async(
+                    fn() => yield $this->courierActivity->findAvailableCouriersInCompanyC(
+                        $pickup,
+                        $this->currentRadius,
+                        $this->declinedCourierIds // Except those who already declined
+                    ),
+                ),
+//                Workflow::async(function () use($pickup) {
+//                    try {
+//                        return yield $this->courierActivity->findAvailableCouriersInCompanyC(
+//                            $pickup,
+//                            $this->currentRadius,
+//                            $this->declinedCourierIds // Except those who already declined
+//                        );
+//                    } catch (\Throwable $e) {
+//                        return [];
+//                    }
+//                }
+//                ),
+            ];
+
+              // wait all results
+//            $results = yield Promise::all($promises);
+//            $availableCourierIds = array_merge(...array_filter($results)); // flatten to one array without empty results
+
+
+
+            // in this case we take any first result - even it will be an empty
+            // the problem is, if we get empty result, our workflow will be expand search and run new cycle
+//            $availableCourierIds = yield Promise::any($promises);
+
+
+            // here we might filter the result
+            // the case: we want to take only first non-empty result
+            $availableCourierIds = [];
+            $completedCount = 0;
+            $totalPromises = count($promises);
+
+            foreach ($promises as $promise) {
+                Workflow::async(function () use ($promise, &$availableCourierIds, &$completedCount) {
+                    /** @var array<string> $result */
+                    $result = yield $promise;
+
+                    $completedCount += 1;
+                    if (!empty($result) && empty($availableCourierIds)) {
+                        $availableCourierIds = $result;
+                    }
+                });
+            }
+
+            // Resolve when: first non-empty result arrives OR all promises completed (all empty)
+            yield Workflow::awaitWithTimeout(
+                CarbonInterval::seconds(30), // in 30 seconds we have to find at least one courier or timeout
+                function () use (&$availableCourierIds, &$completedCount, $totalPromises) {
+                    return !empty($availableCourierIds) || $completedCount === $totalPromises;
+                },
             );
+
 
             if (empty($availableCourierIds)) {
                 // not found anyone, extend radius
