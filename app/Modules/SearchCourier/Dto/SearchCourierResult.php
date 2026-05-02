@@ -28,6 +28,11 @@ class SearchCourierResult
         return new self(null, $statusInfo);
     }
 
+    public static function courierSearchCancelled(CourierSearchStatusInfo $statusInfo): self
+    {
+        return new self(null, $statusInfo);
+    }
+
     public function courierWasFound(): bool
     {
         return $this->courier !== null;

@@ -8,4 +8,5 @@ enum CourierSearchStatus: string
     case WaitingAcceptance = 'WaitingAcceptance';
     case Found = 'Found';
     case NotFound = 'NotFound';
+    case Cancelled = 'Cancelled';
 }
