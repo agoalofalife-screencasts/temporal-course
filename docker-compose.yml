@@ -91,10 +91,13 @@ services:
     ports:
       - "8000:8000"   # HTTP
       - "6001:6001"   # RoadRunner metrics (optional)
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - APP_ENV=local
       - APP_DEBUG=true
+      - PHP_IDE_CONFIG=serverName=food-delivery
     command: ["/usr/local/bin/rr", "serve", "-c", ".rr.yaml"]
 
 volumes:

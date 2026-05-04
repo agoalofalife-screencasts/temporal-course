@@ -146,6 +146,64 @@ docker/
 - Temporal-воркеры для выполнения Activities
 - Адрес Temporal задаётся через переменную окружения `TEMPORAL_ADDRESS`
 
+## Отладка через Xdebug (PhpStorm)
+
+Xdebug настроен на отладку **только Activity-воркеров Temporal**. 
+
+### Что уже настроено в репозитории
+
+Конфигурация состоит из трёх частей и применяется автоматически при `docker compose up --build`:
+
+**1. Установка Xdebug в контейнере** (`docker/Dockerfile`):
+```ini
+xdebug.mode=debug
+xdebug.start_with_request=trigger     # сессия стартует только при наличии триггера
+xdebug.client_host=host.docker.internal
+xdebug.client_port=9003
+xdebug.idekey=PHPSTORM
+xdebug.log=/tmp/xdebug.log
+xdebug.discover_client_host=0
+```
+
+**2. Сетевая связность контейнер → хост** (`docker-compose.yml`):
+```yaml
+extra_hosts:
+  - "host.docker.internal:host-gateway"
+environment:
+  - PHP_IDE_CONFIG=serverName=food-delivery
+```
+
+`extra_hosts` нужен на Linux, чтобы `host.docker.internal` резолвился внутри контейнера. На macOS он работает «из коробки», но строка не мешает.
+
+**3. Триггер только для Activity-воркеров** (`.rr.yaml`):
+```yaml
+temporal:
+  activities:
+    num_workers: 2
+    command: "/usr/bin/env XDEBUG_TRIGGER=PHPSTORM php ./vendor/bin/roadrunner-temporal-worker"
+```
+
+`/usr/bin/env XDEBUG_TRIGGER=PHPSTORM` ставит переменную окружения **только** для процессов Activity-воркеров. RoadRunner не поддерживает блок `env:` под `temporal.activities`, поэтому используется этот inline-приём с явным путём к `/usr/bin/env` (чтобы не зависеть от `PATH`).
+
+### Настройка PhpStorm (один раз)
+
+1. **PHP → Servers** → создать сервер:
+   - **Name:** `food-delivery` (должно совпадать с `PHP_IDE_CONFIG=serverName=...`)
+   - **Host:** `localhost`
+   - **Port:** `8000`
+   - **Debugger:** Xdebug
+   - Включить **Use path mappings** и сопоставить:
+
+     | Project file (host)                          | Path on server (container) |
+     |----------------------------------------------|----------------------------|
+     | `/Users/<you>/.../food-delivery/`            | `/app/`                    |
+
+2. **PHP → Debug** → Xdebug:
+   - **Debug port:** `9003`
+   - Включить **Can accept external connections**
+
+3. На верхней панели IDE кликнуть **«Start Listening for PHP Debug Connections»** (иконка телефонной трубки с жуком должна стать зелёной). Без этого шага никаких подключений не будет.
+
 ## Решение проблем
 
 ### Temporal не запускается
