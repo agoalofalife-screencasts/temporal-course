@@ -33,7 +33,9 @@ temporal:
   activities:
     # Pool для Activities
     num_workers: 2
-    command: "php ./vendor/bin/roadrunner-temporal-worker"
+    # Xdebug enabled only for activity workers (RR has no per-pool env config,
+    # so we use /usr/bin/env to inject XDEBUG_TRIGGER inline)
+    command: "/usr/bin/env XDEBUG_TRIGGER=PHPSTORM php ./vendor/bin/roadrunner-temporal-worker"
 
 logs:
   # RoadRunner перенаправляет stderr PHP-воркеров в свой лог-пайплайн.
