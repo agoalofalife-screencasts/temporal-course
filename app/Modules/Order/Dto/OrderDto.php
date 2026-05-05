@@ -38,4 +38,9 @@ final class OrderDto extends Data
     {
         return $this->order->id;
     }
+
+    public function customerPhone(): string
+    {
+        return $this->order->customer_phone;
+    }
 }

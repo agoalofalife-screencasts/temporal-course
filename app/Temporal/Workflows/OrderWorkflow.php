@@ -7,6 +7,7 @@ use App\Modules\Order\Enums\OrderStatus;
 use App\Modules\SearchCourier\Dto\DeliveryLocation;
 use App\Modules\SearchCourier\Dto\SearchCourierResult;
 use App\Modules\SearchCourier\Entity\Courier;
+use App\Temporal\Activities\NotificationActivity;
 use App\Temporal\Activities\NotifyRestaurantActivity;
 use App\Temporal\Activities\SearchCourier\CourierActivity;
 use App\Temporal\Workflows\SearchCourier\FindCourierWorkflow;
@@ -28,7 +29,7 @@ use Temporal\Workflow\WorkflowMethod;
 #[WorkflowInterface]
 class OrderWorkflow
 {
-    private const RESTAURANT_TIMEOUT_SECONDS = 30;
+    private const RESTAURANT_TIMEOUT_SECONDS = 120; // 2 minutes
 
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
@@ -36,12 +37,22 @@ class OrderWorkflow
     /** @var CourierActivity */
     private $courierActivity;
 
+    /** @var NotificationActivity */
+    private $notifications;
+
     private OrderStatus $status;
 
     private ?Courier $courier = null;
 
     public function __construct()
     {
+        $this->notifications = Workflow::newActivityStub(
+            NotificationActivity::class,
+            ActivityOptions::new()
+                ->withStartToCloseTimeout(CarbonInterval::seconds(30))
+                ->withRetryOptions(RetryOptions::new()->withMaximumAttempts(3)),
+        );
+
         $this->courierActivity = Workflow::newActivityStub(
             CourierActivity::class,
             ActivityOptions::new()
@@ -175,6 +186,21 @@ class OrderWorkflow
 
             // notify customer about the acceptance
             Workflow::getLogger()->info("Restaurant accepted the order");
+
+
+            $version = yield Workflow::getVersion(
+                'sms-after-restaurant-confirm',      // understandable name of changes
+                Workflow::DEFAULT_VERSION,        // min supported
+                1                                 // current version (max version)
+            );
+
+            if ($version >= 1) {
+                // only for new workflows
+                yield $this->notifications->sendOrderConfirmationSms(
+                    $orderDto->customerPhone(),
+                    $orderDto->orderId(),
+                );
+            }
 
             // Create stub for child workflow
             $findCourierWorkflow = Workflow::newChildWorkflowStub(

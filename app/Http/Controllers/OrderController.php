@@ -29,8 +29,7 @@ class OrderController extends Controller
         ]);
 
         $orderId = Uuid::uuid7();
-        $workflowId = "order-{$orderId->toString()}"
-        ;
+        $workflowId = "order-{$orderId->toString()}";
 //        $workflowId = 'order-1';
 
         $workflow = $client->newWorkflowStub(
