@@ -21,7 +21,7 @@ class NotificationActivity
      * @return VirtualPromise<void>
      **/
     #[ActivityMethod]
-    public function sendOrderConfirmationSms(
+    public function sendRestaurantConfirmationSms(
         string $phoneNumber,
         UuidInterface $orderId,
     ): void {

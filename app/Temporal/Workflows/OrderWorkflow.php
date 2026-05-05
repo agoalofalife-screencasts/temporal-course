@@ -196,7 +196,7 @@ class OrderWorkflow
 
             if ($version >= 1) {
                 // only for new workflows
-                yield $this->notifications->sendOrderConfirmationSms(
+                yield $this->notifications->sendRestaurantConfirmationSms(
                     $orderDto->customerPhone(),
                     $orderDto->orderId(),
                 );
