@@ -1,0 +1,16 @@
+app/Temporal/Workflows/OrderWorkflow.php
+  h_4cf97dd0d8e551 199
+app/Temporal/Activities/NotificationActivity.php
+  h_4cf97dd0d8e551 24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.4",
+  "base_commit_sha": "a72fe2a417f29f13604d720774abba62a6034aa2",
+  "prompts": {},
+  "humans": {
+    "h_4cf97dd0d8e551": {
+      "author": "agoalofalife"
+    }
+  }
+}
