@@ -1,0 +1,34 @@
+app/Temporal/Activities/NotificationActivity.php
+  h_4cf97dd0d8e551 41,61
+  h_a199eed62fed51 42-60
+app/Temporal/Workflows/OrderWorkflow.php
+  h_a199eed62fed51 32,194,203-207
+  h_4cf97dd0d8e551 197
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.1",
+  "base_commit_sha": "dc81aa4267d9589bad2b08a430fd28baed9d1833",
+  "prompts": {
+    "b685a5159b659209": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "526310be-85ce-406b-8273-68f848aa36bb",
+        "model": "claude-opus-4-7"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>",
+      "total_additions": 1281,
+      "total_deletions": 0,
+      "accepted_lines": 2096,
+      "overriden_lines": 0
+    }
+  },
+  "humans": {
+    "h_4cf97dd0d8e551": {
+      "author": "agoalofalife"
+    },
+    "h_a199eed62fed51": {
+      "author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  }
+}
