@@ -38,4 +38,25 @@ class NotificationActivity
             'phone' => $phoneNumber,
         ]);
     }
+
+    /**
+     * @return VirtualPromise<void>
+     **/
+    #[ActivityMethod]
+    public function sendRestaurantConfirmationPush(
+        string $phoneNumber,
+        UuidInterface $orderId,
+    ): void {
+        $message = sprintf(
+            "Отличные новости! Ресторан начал готовить ваш заказ #%s 🍕",
+            $orderId->toString(),
+        );
+
+        sleep(1);
+
+        Log::info("Sms sent to customer", [
+            'orderId' => $orderId->toString(),
+            'phone' => $phoneNumber,
+        ]);
+    }
 }

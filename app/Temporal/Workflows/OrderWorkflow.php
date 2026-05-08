@@ -29,7 +29,7 @@ use Temporal\Workflow\WorkflowMethod;
 #[WorkflowInterface]
 class OrderWorkflow
 {
-    private const RESTAURANT_TIMEOUT_SECONDS = 120; // 2 minutes
+    private const RESTAURANT_TIMEOUT_SECONDS = 30;
 
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
@@ -191,12 +191,17 @@ class OrderWorkflow
             $version = yield Workflow::getVersion(
                 'sms-after-restaurant-confirm',      // understandable name of changes
                 Workflow::DEFAULT_VERSION,        // min supported
-                1                                 // current version (max version)
+                2                                 // current version (max version)
             );
 
-            if ($version >= 1) {
+            if ($version === 1) {
                 // only for new workflows
                 yield $this->notifications->sendRestaurantConfirmationSms(
+                    $orderDto->customerPhone(),
+                    $orderDto->orderId(),
+                );
+            } elseif ($version >= 2) {
+                yield $this->notifications->sendRestaurantConfirmationPush(
                     $orderDto->customerPhone(),
                     $orderDto->orderId(),
                 );
