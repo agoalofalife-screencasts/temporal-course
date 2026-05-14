@@ -1,0 +1,22 @@
+app/Temporal/Activities/PromotionActivity.php
+  h_a199eed62fed51 1-25
+app/Temporal/Workflows/RestaurantPromotionWorkflow.php
+  h_a199eed62fed51 1-86
+app/Console/Commands/GenerateLimitedSignal.php
+  h_a199eed62fed51 1-69
+app/Console/Commands/CreateRestaurantPromotionWorkflow.php
+  h_a199eed62fed51 1-37
+app/Modules/Offers/PromotionOffer.php
+  h_a199eed62fed51 1-23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.8",
+  "base_commit_sha": "25a6de8cc6a118fc8fd2b4f29dea01d5cbaa40fd",
+  "prompts": {},
+  "humans": {
+    "h_a199eed62fed51": {
+      "author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  }
+}
