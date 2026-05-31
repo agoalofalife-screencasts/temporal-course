@@ -1,0 +1,24 @@
+app/Temporal/Activities/PaymentProviderActivity.php
+  h_a199eed62fed51 1-26
+app/Console/Commands/MakeWeeklyOrderWorkflowBySchedule.php
+  h_a199eed62fed51 1-170
+app/Temporal/Activities/RestaurantActivity.php
+  h_a199eed62fed51 1-30
+app/Modules/Order/Dto/WeeklyOrderInput.php
+  h_a199eed62fed51 1-33
+app/Temporal/Workflows/WeeklySubscriptionWorkflow.php
+  h_a199eed62fed51 1-64
+app/Modules/Order/Dto/RestaurantMenu.php
+  h_a199eed62fed51 1-17
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "d6e2202c970b9a66e5000777f6e49f9cdd979c6c",
+  "prompts": {},
+  "humans": {
+    "h_a199eed62fed51": {
+      "author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  }
+}
