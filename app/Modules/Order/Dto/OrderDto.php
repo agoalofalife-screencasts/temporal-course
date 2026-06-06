@@ -43,4 +43,10 @@ final class OrderDto extends Data
     {
         return $this->order->customer_phone;
     }
+
+    public function updateDeliveryAddress(string $newAddress): Order
+    {
+        $this->order->delivery_address = $newAddress;
+        return $this->order;
+    }
 }

@@ -47,4 +47,9 @@ enum OrderStatus: string
     {
         return $this->value === self::RestaurantProcessing->value;
     }
+
+    public function courierIsNotAssignedYet(): bool
+    {
+        return !in_array($this->value, [self::CourierSearching->value, self::CourierAssigned->value]);
+    }
 }

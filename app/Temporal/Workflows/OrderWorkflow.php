@@ -2,16 +2,20 @@
 
 namespace App\Temporal\Workflows;
 
+use AllowDynamicProperties;
+use App\Models\Order;
 use App\Modules\Order\Dto\OrderDto;
 use App\Modules\Order\Enums\OrderStatus;
 use App\Modules\SearchCourier\Dto\DeliveryLocation;
 use App\Modules\SearchCourier\Dto\SearchCourierResult;
 use App\Modules\SearchCourier\Entity\Courier;
+use App\Temporal\Activities\DatabaseActivity;
 use App\Temporal\Activities\NotificationActivity;
 use App\Temporal\Activities\NotifyRestaurantActivity;
 use App\Temporal\Activities\SearchCourier\CourierActivity;
 use App\Temporal\Workflows\SearchCourier\FindCourierWorkflow;
 use Carbon\CarbonInterval;
+use Ramsey\Uuid\Uuid;
 use Temporal\Activity\ActivityOptions;
 use Temporal\Api\Enums\V1\ParentClosePolicy;
 use Temporal\Common\RetryOptions;
@@ -21,15 +25,20 @@ use Temporal\Workflow\ChildWorkflowOptions;
 use Temporal\Workflow\Saga;
 use Temporal\Workflow\SignalMethod;
 use Temporal\Workflow\TimerOptions;
+use Temporal\Workflow\UpdateMethod;
+use Temporal\Workflow\UpdateValidatorMethod;
 use Temporal\Workflow\WorkflowInterface;
 use Temporal\Workflow\WorkflowMethod;
 
 //  Marker for the Temporal SDK.
 // Tells Temporal: "this class is a Workflow definition". The Temporal Worker scans classes with this attribute and registers them.
+#[AllowDynamicProperties]
 #[WorkflowInterface]
 class OrderWorkflow
 {
-    private const RESTAURANT_TIMEOUT_SECONDS = 30;
+    private const RESTAURANT_TIMEOUT_SECONDS = 120;
+
+    private string $trackingCode;
 
     /** @var NotifyRestaurantActivity */
     private $notifyRestaurantActivity;
@@ -43,6 +52,7 @@ class OrderWorkflow
     private OrderStatus $status;
 
     private ?Courier $courier = null;
+    private OrderDto $order;
 
     public function __construct()
     {
@@ -97,6 +107,13 @@ class OrderWorkflow
                 ->withScheduleToStartTimeout(CarbonInterval::seconds(5)),
             //                ->withScheduleToCloseTimeout(CarbonInterval::seconds(2)) for online demonstration
         );
+
+        $this->database = Workflow::newActivityStub(
+            DatabaseActivity::class,
+            ActivityOptions::new()
+                ->withStartToCloseTimeout(CarbonInterval::seconds(30))
+                ->withRetryOptions(RetryOptions::new()->withMaximumAttempts(3)),
+        );
     }
 
     // Entry point of the Workflow.
@@ -109,6 +126,10 @@ class OrderWorkflow
     #[WorkflowMethod(name: "Order")]
     public function handle(OrderDto $orderDto): \Generator
     {
+        $this->trackingCode = yield Workflow::sideEffect(fn () : string => $this->generateTrackingCode());
+
+        $this->order = $orderDto;
+
         $saga = new Saga();
 
         try {
@@ -116,7 +137,7 @@ class OrderWorkflow
             // Set to false if you need strict reverse-order execution
 //        $saga->setParallelCompensation(true);
 
-            $this->status = $orderDto->status;
+            $this->status = $orderDto->status; // status in the DTO will not updated, so we need to set it here as well (reminder)
 
             /**
              * Generate a UUID for the order.
@@ -201,9 +222,10 @@ class OrderWorkflow
                     $orderDto->orderId(),
                 );
             } elseif ($version >= 2) {
-                yield $this->notifications->sendRestaurantConfirmationPush(
+                yield $this->notifications->sendRestaurantConfirmationPushWithCode(
                     $orderDto->customerPhone(),
                     $orderDto->orderId(),
+                    $this->trackingCode,
                 );
             }
 
@@ -290,9 +312,47 @@ class OrderWorkflow
             $this->status = OrderStatus::RestaurantRejected;
         }
     }
+
+    #[UpdateValidatorMethod(forUpdate: 'updateAddress')]
+    public function validateUpdateAddress(string $newAddress): void // arguments has to be equal with update method
+    {
+        // user input validation
+        if (!is_string($newAddress)) {
+            throw new \InvalidArgumentException("New address must be a string");
+        }
+
+        if (is_numeric($newAddress)) {
+            throw new \InvalidArgumentException("New address cannot be numeric");
+        }
+        // business logic validation
+        if (!$this->status->courierIsNotAssignedYet()) {
+            throw new \DomainException("Courier is assigned, is not possible to change the address");
+        }
+    }
+
+    /**
+     * @return \Generator<Order>
+     */
+    #[UpdateMethod]
+    public function updateAddress(string $newAddress): \Generator
+    {
+        // update in state of the workflow
+        $this->order->updateDeliveryAddress($newAddress);
+
+        // update in database (optional) and depends on the business logic
+        yield $this->database->updateOrderAddress($this->order->orderId(), $newAddress);
+
+        return $this->order;
+    }
+
     #[Workflow\QueryMethod]
     public function getStatus(): OrderStatus
     {
         return $this->status;
+    }
+
+    private function generateTrackingCode(): string
+    {
+        return strtoupper(bin2hex(random_bytes(4))); // example: "A1B2C3D4"
     }
 }
