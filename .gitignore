@@ -1,6 +1,7 @@
 *.log
 .DS_Store
 .env
+.env.testing
 .env.backup
 .env.production
 .phpactor.json
@@ -22,3 +23,4 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+temporal-test-server
