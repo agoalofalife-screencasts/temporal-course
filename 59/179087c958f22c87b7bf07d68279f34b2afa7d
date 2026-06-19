@@ -1,0 +1,60 @@
+.rr.test.yaml
+  s_3bac42547b2f05::t_6b5b6c0b775057 42-43,45
+  h_a199eed62fed51 1-2,5,7-17,21-41,44,46-65
+  s_3bac42547b2f05::t_191072f567e69a 3-4,6
+  s_3bac42547b2f05::t_01578312b91ced 18-20
+tests/bootstrap.php
+  s_3bac42547b2f05::t_e43b53d1de8c6f 12-44,47
+  h_a199eed62fed51 45
+  s_3bac42547b2f05::t_2b07b9bcd305fb 9,46
+  s_3bac42547b2f05::t_e3f570d52afd2a 10-11
+tests/Feature/OrderWorkflowTest.php
+  s_3bac42547b2f05::t_3814d10062cc21 30-34
+  s_3bac42547b2f05::t_c49503357ef2b9 76
+  h_a199eed62fed51 1-4,11-13,16-18,20-29,36-45,60-65,67,74,78,80-81,90,92,102-103,111,118
+  s_a65c1881aadca8::t_baa5fa6c8e8284 5-9,14,46-59,68-73,75,77,79,82-89,91,93-101,104-110,112-117,119
+  s_a65c1881aadca8::t_cecf6cfd768e66 19
+  s_a65c1881aadca8::t_925bc0d88374a2 66
+tests/TestCase.php
+  h_a199eed62fed51 9-13
+tests/Feature/TimerProblemWorkflowTest.php
+  h_a199eed62fed51 1-49
+app/Temporal/Workflows/TimerProblemWorkflow.php
+  h_a199eed62fed51 1-25
+.gitignore
+  h_a199eed62fed51 4,26
+phpunit.xml
+  h_a199eed62fed51 4,6,24,35
+docker-compose.yml
+  s_3bac42547b2f05::t_4947633ef25ce7 59-114
+  s_3bac42547b2f05::t_b19410e95b6c3a 144-145
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.8",
+  "base_commit_sha": "59179087c958f22c87b7bf07d68279f34b2afa7d",
+  "prompts": {},
+  "humans": {
+    "h_a199eed62fed51": {
+      "author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_3bac42547b2f05": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "cf8f960b-fe69-490d-a96f-37888ba212ce",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>"
+    },
+    "s_a65c1881aadca8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f9fe436e-8802-46b8-8e79-cf5de936e0ee",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  }
+}
