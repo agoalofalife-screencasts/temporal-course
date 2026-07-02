@@ -10,6 +10,7 @@ use App\Modules\SearchCourier\Dto\DeliveryLocation;
 use App\Modules\SearchCourier\Dto\SearchCourierResult;
 use App\Modules\SearchCourier\Entity\Courier;
 use App\Temporal\Activities\DatabaseActivity;
+use App\Temporal\Activities\MetricsActivity;
 use App\Temporal\Activities\NotificationActivity;
 use App\Temporal\Activities\NotifyRestaurantActivity;
 use App\Temporal\Activities\SearchCourier\CourierActivity;
@@ -19,6 +20,7 @@ use Ramsey\Uuid\Uuid;
 use Temporal\Activity\ActivityOptions;
 use Temporal\Api\Enums\V1\ParentClosePolicy;
 use Temporal\Common\RetryOptions;
+use Temporal\Common\SearchAttributes\SearchAttributeKey;
 use Temporal\Exception\Failure\CanceledFailure;
 use Temporal\Workflow;
 use Temporal\Workflow\ChildWorkflowOptions;
@@ -53,6 +55,9 @@ class OrderWorkflow
 
     private ?Courier $courier = null;
     private OrderDto $order;
+
+    /** @var MetricsActivity */
+    private $metricsActivity;
 
     public function __construct()
     {
@@ -110,6 +115,12 @@ class OrderWorkflow
 
         $this->database = Workflow::newActivityStub(
             DatabaseActivity::class,
+            ActivityOptions::new()
+                ->withStartToCloseTimeout(CarbonInterval::seconds(30))
+                ->withRetryOptions(RetryOptions::new()->withMaximumAttempts(3)),
+        );
+
+        $this->metricsActivity = Workflow::newActivityStub(MetricsActivity::class,
             ActivityOptions::new()
                 ->withStartToCloseTimeout(CarbonInterval::seconds(30))
                 ->withRetryOptions(RetryOptions::new()->withMaximumAttempts(3)),
@@ -177,6 +188,10 @@ class OrderWorkflow
             // for simplicity, encapsulate it inside object
             $this->status = OrderStatus::RestaurantProcessing;
 
+            Workflow::upsertTypedSearchAttributes(
+                SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+            );
+
             Workflow::getLogger()->info("Restaurant was notified about new order");
 
             $restaurantIsResponded = (yield Workflow::awaitWithTimeout(
@@ -190,21 +205,31 @@ class OrderWorkflow
                 );
                 // might be the reason - for example rejected because timeout or some other reason
                 $this->status = OrderStatus::RestaurantRejected;
+                Workflow::upsertTypedSearchAttributes(
+                    SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+                );
                 // Compensate: cancel the order at the restaurant
                 yield $saga->compensate();
                 return;
             }
 
             if ($this->status->restaurantRejected()) {
+                Workflow::upsertTypedSearchAttributes(
+                    SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+                );
                 $this->status = OrderStatus::RestaurantRejected;
                 Workflow::getLogger()->info("Restaurant rejected the order");
                 // Compensate: cancel the order at the restaurant
 //                yield $saga->compensate();
+
+                yield $this->metricsActivity->increment('restaurant_order_rejects');
                 return;
             }
 
             $this->status = OrderStatus::RestaurantAccepted;
-
+            Workflow::upsertTypedSearchAttributes(
+                SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+            );
             // notify customer about the acceptance
             Workflow::getLogger()->info("Restaurant accepted the order");
 
@@ -250,6 +275,9 @@ class OrderWorkflow
             );
 
             $this->status = OrderStatus::CourierSearching;
+            Workflow::upsertTypedSearchAttributes(
+                SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+            );
 
             /**
              * @var SearchCourierResult $searchCourierResult
@@ -269,6 +297,9 @@ class OrderWorkflow
 
             if (!$searchCourierResult->courierWasFound()) {
                 $this->status = OrderStatus::CourierWasNotFound;
+                Workflow::upsertTypedSearchAttributes(
+                    SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+                );
                 Workflow::getLogger()->info(
                     "Courier was not found, compensating...",
                 );
@@ -278,6 +309,9 @@ class OrderWorkflow
             }
 
             $this->status = OrderStatus::CourierAssigned;
+            Workflow::upsertTypedSearchAttributes(
+                SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+            );
             $this->courier = $searchCourierResult->courier;
 
             // After courier is assigned, register compensation to cancel the courier
@@ -311,6 +345,9 @@ class OrderWorkflow
         } else {
             $this->status = OrderStatus::RestaurantRejected;
         }
+        Workflow::upsertTypedSearchAttributes(
+            SearchAttributeKey::forKeyword('OrderStatus')->valueSet($this->status->value),
+        );
     }
 
     #[UpdateValidatorMethod(forUpdate: 'updateAddress')]

@@ -30,6 +30,16 @@ http:
 temporal:
   address: "${TEMPORAL_ADDRESS:-localhost:7233}"
 
+  # Go SDK metrics, retransmitted by RoadRunner to a Prometheus endpoint.
+  # Docs: https://docs.roadrunner.dev/docs/logging-and-observability/metrics#temporal-metrics
+  # Bind to 0.0.0.0 so the Prometheus container can scrape app:9095/metrics.
+  metrics:
+    driver: prometheus
+    prometheus:
+      address: "0.0.0.0:9095"
+      type: "summary"
+      prefix: "temporal_sdk"
+
   activities:
     # Pool для Activities
     num_workers: 2
@@ -37,9 +47,23 @@ temporal:
     # so we use /usr/bin/env to inject XDEBUG_TRIGGER inline)
     command: "/usr/bin/env XDEBUG_TRIGGER=PHPSTORM php ./vendor/bin/roadrunner-temporal-worker"
 
+# Application metrics plugin — exposes custom metrics pushed from PHP via the
+# roadrunner-metrics RPC client.
+# Docs: https://docs.roadrunner.dev/docs/logging-and-observability/metrics#application-metrics
+# Bind to 0.0.0.0 so the Prometheus container can scrape app:2112/metrics.
+metrics:
+  address: "0.0.0.0:2112"
+  collect:
+    created_orders:
+      type: counter
+      help: "Total number of created orders."
+    restaurant_order_rejects:
+      type: counter
+      help: "Total number of orders rejected by the restaurant."
+
 logs:
-  # RoadRunner перенаправляет stderr PHP-воркеров в свой лог-пайплайн.
-  # Laravel пишет в php://stderr (LOG_CHANNEL=stderr), RR подхватывает.
+  # RoadRunner redirect stderr PHP-workers to own log pipeline
+  # Laravel write php://stderr (LOG_CHANNEL=stderr), RR catch it.
   level: debug
   encoding: json
   mode: production

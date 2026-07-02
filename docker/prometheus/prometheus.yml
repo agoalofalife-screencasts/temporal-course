@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Temporal server metrics.
+  # The Temporal server exposes Prometheus metrics on the address set via the
+  # PROMETHEUS_ENDPOINT env var in the `temporal` service (see docker-compose.yml).
+  - job_name: "temporal-server"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["temporal:8000"]
+
+  # Temporal Go SDK metrics, retransmitted by the RoadRunner temporal plugin.
+  # Configured under `temporal.metrics` in .rr.yaml (binds 0.0.0.0:9095).
+  - job_name: "temporal-sdk"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["app:9095"]
+
+  # Application metrics — custom counters declared under `metrics.collect`
+  # in .rr.yaml (created_orders, restaurant_order_rejects), pushed from PHP
+  # via the roadrunner-metrics RPC client. Served on app:2112.
+  - job_name: "app-metrics"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["app:2112"]
+
+  # Prometheus scraping itself (useful for sanity checks).
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

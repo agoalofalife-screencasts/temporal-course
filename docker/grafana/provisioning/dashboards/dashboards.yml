@@ -1,0 +1,13 @@
+apiVersion: 1
+
+providers:
+  - name: "Temporal"
+    orgId: 1
+    folder: "Temporal"
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      # Drop Temporal dashboard JSON files here to have them auto-loaded.
+      # Official dashboards: https://github.com/temporalio/dashboards
+      path: /var/lib/grafana/dashboards

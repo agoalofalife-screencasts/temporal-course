@@ -1,0 +1,40 @@
+# Vector tails the app container's logs via the Docker socket (no app changes)
+# and ships them to VictoriaLogs using its Elasticsearch bulk ingestion API.
+sources:
+  docker:
+    type: docker_logs
+    # Only collect the RoadRunner app container. Add more names to widen scope.
+    include_containers:
+      - food_delivery_app
+
+transforms:
+  parse:
+    type: remap
+    inputs:
+      - docker
+    source: |
+      # RoadRunner emits JSON log lines; the PHP `server` channel may emit plain
+      # text. Try to parse JSON and merge its fields up; otherwise keep raw.
+      parsed, err = parse_json(.message)
+      if err == null && is_object(parsed) {
+        . = merge(., object!(parsed))
+      }
+      # Normalise a level field for filtering (RR uses "level", default to info).
+      if !exists(.level) { .level = "info" }
+
+sinks:
+  victorialogs:
+    type: elasticsearch
+    inputs:
+      - parse
+    endpoints:
+      - http://victorialogs:9428/insert/elasticsearch/
+    mode: bulk
+    api_version: v8
+    healthcheck:
+      enabled: false
+    # VictoriaLogs-specific ingestion hints (passed as query args).
+    query:
+      _msg_field: message
+      _time_field: timestamp
+      _stream_fields: container_name,level

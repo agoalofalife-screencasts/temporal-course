@@ -9,13 +9,18 @@ use App\Temporal\Workflows\OrderWorkflow;
 use Carbon\CarbonInterval;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use OpenTelemetry\API\Trace\SpanKind;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
+use Spiral\RoadRunner\Metrics\Metrics;
+use Temporal\OpenTelemetry\Tracer;
 use Temporal\Client\Update\LifecycleStage;
 use Temporal\Client\Update\UpdateOptions;
 use Temporal\Client\WorkflowClientInterface;
 use Temporal\Client\WorkflowOptions;
 use Temporal\Common\IdReusePolicy;
+use Temporal\Common\SearchAttributes\SearchAttributeKey;
+use Temporal\Common\TypedSearchAttributes;
 use Temporal\Common\WorkflowIdConflictPolicy;
 use Temporal\Exception\Client\TimeoutException;
 use Temporal\Exception\Client\WorkflowNotFoundException;
@@ -171,6 +176,7 @@ class OrderController extends Controller
     public function store(
         Request $request,
         WorkflowClientInterface $client,
+        Metrics $metrics,
     )
     {
         $validated = $request->validate([
@@ -181,7 +187,6 @@ class OrderController extends Controller
 
         $orderId = Uuid::uuid7();
         $workflowId = "order-{$orderId->toString()}";
-//        $workflowId = 'order-1';
 
         $workflow = $client->newWorkflowStub(
             OrderWorkflow::class,
@@ -235,6 +240,11 @@ class OrderController extends Controller
 
 //                ->withWorkflowIdReusePolicy(IdReusePolicy::AllowDuplicate)
 //            ->withWorkflowIdReusePolicy() demonstrate in video how works
+            ->withTypedSearchAttributes(
+                TypedSearchAttributes::empty()
+                    ->withValue(SearchAttributeKey::forKeyword('OrderId'), $orderId)
+                    ->withValue(SearchAttributeKey::forKeyword('OrderStatus'), OrderStatus::Created->value)
+                )
         );
 
         $order = Order::firstOrCreate([
@@ -245,6 +255,8 @@ class OrderController extends Controller
             'customer_phone' => $validated['phone'],
             'delivery_address' => $validated['address'],
         ]);
+
+        $metrics->add('created_orders', 1);
 
         /**
          * Start the workflow ASYNCHRONOUSLY.

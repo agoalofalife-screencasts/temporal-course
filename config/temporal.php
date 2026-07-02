@@ -107,6 +107,18 @@ return [
      * Interceptors (middlewares) registered in the worker
      */
     'interceptors' => [
+        \Temporal\OpenTelemetry\Interceptor\OpenTelemetryActivityInboundInterceptor::class,
+        \Temporal\OpenTelemetry\Interceptor\OpenTelemetryWorkflowOutboundRequestInterceptor::class,
+        \Temporal\OpenTelemetry\Interceptor\OpenTelemetryWorkflowClientCallsInterceptor::class,
+    ],
+
+    /**
+     * OpenTelemetry tracing for Temporal workflows/activities.
+     * Spans are exported via OTLP/HTTP to a collector that forwards them to Zipkin.
+     */
+    'otel' => [
+        'endpoint' => env('OTEL_EXPORTER_OTLP_ENDPOINT', 'http://otel-collector:4318'),
+        'service_name' => env('OTEL_SERVICE_NAME', 'food-delivery'),
     ],
 
     /**
