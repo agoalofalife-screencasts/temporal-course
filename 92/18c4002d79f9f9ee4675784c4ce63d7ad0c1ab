@@ -1,0 +1,84 @@
+docker/vector/vector.yaml
+  s_a7028cc3164fc6::t_ff27e6cba83263 1-40
+config/temporal.php
+  s_a7028cc3164fc6::t_e2b30cc9d592ce 110-121
+app/Http/Middleware/TraceRequest.php
+  s_a7028cc3164fc6::t_4ce7a475a54d8e 1-12,14-39
+  s_a7028cc3164fc6::t_d43e23e3afd581 13
+docker/prometheus/prometheus.yml
+  s_a7028cc3164fc6::t_af4e1fbbe2599b 14-20
+  s_a7028cc3164fc6::t_a104fe004554f2 1-13,29-32
+  s_a7028cc3164fc6::t_b4ead8b6370fe6 21-28
+composer.json
+  s_a7028cc3164fc6::t_dce9600a13f0f7 14-15,19,21
+app/Temporal/Activities/MetricsActivity.php
+  h_a199eed62fed51 1-25
+.rr.yaml
+  s_a7028cc3164fc6::t_85fcfa4e1d517f 50-63
+  h_a199eed62fed51 65-66
+  s_a7028cc3164fc6::t_0d575051ffc780 33-42
+docker/otel/config.yaml
+  s_a7028cc3164fc6::t_42daa68b7df196 1-23
+bootstrap/app.php
+  s_a7028cc3164fc6::t_cfbe1bb4462213 19-21
+  h_a199eed62fed51 3,22
+docker/grafana/provisioning/datasources/victorialogs.yml
+  s_a7028cc3164fc6::t_5f638d7bc70f26 1-9
+app/Temporal/Workflows/OrderWorkflow.php
+  h_a199eed62fed51 13,23,59-61,122-127,191-194,208-210,217-219,224-225,230-232,278-280,300-302,312-314,348-350
+app/Providers/AppServiceProvider.php
+  h_a199eed62fed51 7,16-17,19,28-29,59,67-79
+  s_a7028cc3164fc6::t_e9bbfa1eeab2a0 43
+  s_a7028cc3164fc6::t_f02ec7dc099934 6,8-15,18,30-42,44-58
+app/Http/Controllers/OrderController.php
+  h_a199eed62fed51 245-246,259-260
+  s_3c07c78c327eec::t_a0161fd120378f 12,15-16,22-23,179,243-244,247
+docker/grafana/provisioning/dashboards/dashboards.yml
+  s_a7028cc3164fc6::t_655969fcbc6b72 1-13
+docker/grafana/provisioning/datasources/prometheus.yml
+  s_a7028cc3164fc6::t_4bd7ca3f69f93a 1-10
+docker-compose.yml
+  s_a7028cc3164fc6::t_b49c0d0a186549 256-257
+  s_a7028cc3164fc6::t_7b32a9a9c0a508 264
+  s_a7028cc3164fc6::t_da1fc176760165 248
+  s_a7028cc3164fc6::t_7e6e5da91dd6c3 63-90,92-99
+  s_a7028cc3164fc6::t_4da51e80ba5bf7 62,124-149
+  s_a7028cc3164fc6::t_8a243dfb053b81 262-263
+  s_a7028cc3164fc6::t_0ade5579fadb0c 100-123
+  s_a7028cc3164fc6::t_9914bf40a742ab 240-241
+  s_a7028cc3164fc6::t_e18be03a1fa256 91
+  s_a7028cc3164fc6::t_51e4bb4a8ccd11 37-39,42
+  h_a199eed62fed51 51,196
+  s_a7028cc3164fc6::t_ba831fe446e33e 246-247
+composer.lock
+  s_3c07c78c327eec::t_3a9ababfd93120 7,3353-3907,6115-6195,8180-8259,9413-9464,9527-9587,12404
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.8",
+  "base_commit_sha": "9218c4002d79f9f9ee4675784c4ce63d7ad0c1ab",
+  "prompts": {},
+  "humans": {
+    "h_a199eed62fed51": {
+      "author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_3c07c78c327eec": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "dc3138ca-c6ef-4980-86c6-dd88c0253f05",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>"
+    },
+    "s_a7028cc3164fc6": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "818dec36-f77e-4b9b-ad28-0d16c98e0f4c",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "agoalofalife <agoalofalife@gmail.com>"
+    }
+  }
+}
